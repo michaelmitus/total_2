@@ -73,7 +73,7 @@ for event in longpoll.listen():
             if event.text == 'Привет' or event.text == 'Hi':  # Если написали заданную фразу
                 vk_username = get_user_name_from_vk_id(event.user_id)
                 write_msg(user_id=event.user_id,
-                          message='Hi, '+vk_username,
+                          message='Привет, '+vk_username,
                           )
             elif event.text == 'Список команд':
                 write_msg(user_id=event.user_id,
