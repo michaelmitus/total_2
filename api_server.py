@@ -143,31 +143,34 @@ def delete_category(vk_id, category_id):
     con.close()
     return 'ok'
 
+
 def all_news(**kwargs):
+
     api_key = 'c6b4dff59361415dada7968f05685325'
     newsapi = NewsApiClient(api_key)
     news_on_page = 10
-
-    all_sources = newsapi.get_sources(
+    all_sources = newsapi.get_top_headlines(
         category = kwargs['category'],
         language = kwargs['language'],
-        country = kwargs['country'] )
-    sources = all_sources['sources']
+        q = 'USA'
+        )
+    sources = all_sources['articles']
+
     news_list = list()
-    if all_sources['sources']:
+    if all_sources['articles']:
         print('News list:')
         for news_number in range(0, news_on_page):
-             if news_number == len(all_sources['sources']) :
+             if news_number == len(all_sources['articles']) :
                  break
-             news_list.append(sources[news_number]['description'])
+             news_list.append(sources[news_number]['title'])
     else:
         news_list.append('No news')
-    return jsonify(news_list)
+    return news_list
 
 @app.route('/news/', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 def get_news():
     vk_id = request.args.get('vk_id')
-    return all_news(language='en', category='sports', country='us')
+    return jsonify(all_news(language='en', category='sports, general', keywords='NBA'))
 
 @app.route('/subscriptions/categories/', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 def categorys(*args, **kwargs):
