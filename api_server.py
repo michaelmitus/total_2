@@ -50,6 +50,15 @@ def all_users(*args, **kwargs):
     else:
         pass
 
+def get_all_categorys():
+    sql_request = "SELECT * FROM Category"
+    con = lite.connect('news_api.sqlite')
+    curID = con.cursor()
+    curID.execute(sql_request)
+    resp = curID.fetchall()
+    con.close()
+    return jsonify(resp)
+
 def get_all_category():
 #    def list_of_filters(params, **filters):
     api_key = 'c6b4dff59361415dada7968f05685325'
@@ -92,34 +101,98 @@ def add_category(vk_id, category_id):
 
 def get_category(vk_id):
     sql_request = '''
-                    SELECT Category.Text FROM Category
+                    SELECT Category.ID, Category.Text FROM Category
                     JOIN Users_Category ON Category.ID = Users_Category.CategoryID 
-                    WHERE Users_Category.UserID = '''+str(vk_id)
+                    WHERE Users_Category.UserID = '''+str(vk_id) + """
+                    ORDER BY Category.ID
+                    """
     con = lite.connect('news_api.sqlite')
     curID = con.cursor()
     curID.execute(sql_request)
     resp = curID.fetchall()
     con.close()
-    print(jsonify(resp))
     return jsonify(resp)
+
+def get_category_clear(vk_id):
+    sql_request = '''
+                    SELECT Category.ID, Category.Text FROM Category
+                    JOIN Users_Category ON Category.ID = Users_Category.CategoryID 
+                    WHERE Users_Category.UserID = '''+str(vk_id) + """
+                    ORDER BY Category.ID
+                    """
+    con = lite.connect('news_api.sqlite')
+    curID = con.cursor()
+    curID.execute(sql_request)
+    resp = curID.fetchall()
+    select = list()
+    for items in range(len(resp)):
+        select_item = (resp[items])
+        select.append(select_item[1])
+    con.close()
+    return jsonify(select)
+
+def delete_category(vk_id, category_id):
+    sql_request = "DELETE FROM Users_Category WHERE (Users_Category.CategoryID=" + str(category_id) + ") AND (Users_Category.UserID=" + str(vk_id)+')'
+    con = lite.connect('news_api.sqlite')
+    curID = con.cursor()
+    curID.executescript(sql_request)
+    resp = curID.fetchall()
+    print('Cat', category_id, 'User', vk_id)
+    print(sql_request)
+    print(resp)
+    con.close()
+    return 'ok'
+
+def all_news(**kwargs):
+    api_key = 'c6b4dff59361415dada7968f05685325'
+    newsapi = NewsApiClient(api_key)
+    news_on_page = 10
+
+    all_sources = newsapi.get_sources(
+        category = kwargs['category'],
+        language = kwargs['language'],
+        country = kwargs['country'] )
+    sources = all_sources['sources']
+    news_list = list()
+    if all_sources['sources']:
+        print('News list:')
+        for news_number in range(0, news_on_page):
+             if news_number == len(all_sources['sources']) :
+                 break
+             news_list.append(sources[news_number]['description'])
+    else:
+        news_list.append('No news')
+    return jsonify(news_list)
+
+@app.route('/news/', methods=['GET', 'POST', 'PATCH', 'DELETE'])
+def get_news():
+    vk_id = request.args.get('vk_id')
+    return all_news(language='en', category='sports', country='us')
 
 @app.route('/subscriptions/categories/', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 def categorys(*args, **kwargs):
+    vk_id = request.args.get('vk_id')
+    category_id = request.args.get('category_id')
+    clear = request.args.get('clear')
     if request.method == 'GET':
-        return get_category(request.args.get('vk_id'))
+        if vk_id:
+            if clear:
+                return get_category_clear(vk_id)
+            else:
+                return get_category(vk_id)
+        else:
+            return get_all_categorys()
     elif request.method == 'POST':
         if request.args.get('vk_id') == 0:
             return add_all_category()
         else:
-            return add_category(request.args.get('vk_id'),request.args.get('category_id'))
+            return add_category(vk_id, category_id)
     elif request.method == 'PATCH':
         return update_user(**kwars)
     elif request.method == 'DELETE':
-        return del_user(**kwars)
+        return delete_category(vk_id, category_id)
     else:
         return 'None'
-
-
 
 if __name__ == '__main__':
    app.run (host = '127.0.0.1', port = 8080)

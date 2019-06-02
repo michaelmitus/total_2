@@ -55,22 +55,10 @@ def get_user(user_id):
                              params = {'vk_id': user_id})
     return response.text
 
-def get_all_keywords(user_id):
-    pass
-
-def add_keywords(user_id):
-    pass
-
-def delete_keywords(user_id):
-    pass
-
-def get_news(user_id):
-    pass
-
 def vk_print(user_id, title, menu_items):
     msg_text = title + '\n'
     for items in range(len(menu_items)):
-        msg_text = msg_text + (str(items + 1) + '. ' + menu_items[items] + '\n')
+        msg_text = msg_text + (str(items + 1) + '. ' + str(menu_items[items]) + '\n')
     write_msg(user_id=user_id,
               message=msg_text)
 
@@ -113,15 +101,28 @@ def get_all_category():
         selections.add(sources[news_number]['category'])
     return list(selections)
 
+def get_all_categorys():
+    response = requests.get('http://localhost:8080/subscriptions/categories/',
+                             params = {'vk_id': None})
+    todos = json.loads(response.text)
+    return todos
+
 def get_category(user_id):
     response = requests.get('http://localhost:8080/subscriptions/categories/',
                              params = {'vk_id': user_id})
     todos = json.loads(response.text)
-    print(response)
-    print(todos)
-    print(type(todos))
-    print(type(response.text))
     return todos
+    pass
+
+def get_category_clear(user_id):
+    response = requests.get('http://localhost:8080/subscriptions/categories/',
+                             params = {'vk_id': user_id})
+    todos = json.loads(response.text)
+    select = list()
+    for items in range(len(todos)):
+        select_item = (todos[items])
+        select.append(select_item[1])
+    return select
     pass
 
 def add_category(user_id,category_id):
@@ -130,7 +131,10 @@ def add_category(user_id,category_id):
     return response.text
     pass
 
-def delete_category(user_id):
+def delete_category(user_id,category_id):
+    response = requests.delete('http://localhost:8080/subscriptions/categories/',
+                             params = {'vk_id': user_id, 'category_id': category_id})
+    return response.text
     pass
 
 def category_of_news(user_id):
@@ -145,24 +149,33 @@ def category_of_news(user_id):
                                  ))
         if result_choice in ('1', 'Посмотреть все доступные категории'):
             msg_text = 'Все доступные категории' + '\n'
-            selection = list(get_all_category())
+            selection = get_all_categorys()
             for items in range(len(selection)):
-                msg_text = msg_text + selection[items] + '\n'
+                msg_text = msg_text + str(selection[items]) + '\n'
             write_msg(user_id=user_id,
                       message=msg_text)
 
-        if result_choice in ('2', 'Посмотреть подписки на категории'):
-            write_msg(user_id=user_id,
-                      message=get_category(user_id))
-            selection = list(get_category(user_id))
-            msg_text = ' '
+        elif result_choice in ('2', 'Посмотреть подписки на категории'):
+            selection = (get_category_clear(user_id))
+            vk_print(user_id, 'Вы подписаны на категории:', selection)
+
+        elif result_choice in ('3', 'Добавить подписку на категорию'):
+            selection = get_all_categorys()
+            result_choice = vk_menu(user_id,'Выберите подписку для добавления',selection)
+            if int(result_choice) in range(1,len(selection)+1):
+               add_category(user_id, result_choice)
+
+        elif result_choice in ('4', 'Удалить'):
+            selection = (get_category(user_id))
+            msg_text = 'Вы подписаны на категории: \n'
+            select = list()
             for items in range(len(selection)):
-                msg_text = msg_text + str(selection[items])+ '\n'
-            write_msg(user_id=user_id,
-                      message=msg_text)
-
-
-
+                select_item = (selection[items])
+                select.append(select_item[1])
+            result_choice = vk_menu(user_id, 'Удалить подписку на категории', select)
+            select_number = (str(selection[int(result_choice)-1]))
+            if int(result_choice) in range(1,len(select)+1):
+               delete_category(user_id, select_number[1])
 
         elif result_choice in ('20', 'Добавить все категории'):
             add_category(0, 0)
@@ -170,13 +183,37 @@ def category_of_news(user_id):
         elif result_choice in ('0', 'Выход'):
             return 0
 
-#elif event.text == 'Посмотреть подписки категории' or event.text == '2.1':
-#get_category(event.user_id)
-#elif event.text == 'Добавить подписку на категорию' or event.text == '2.2':
-#add_category(event.user_id)
-#elif event.text == 'Удалить подписку на категорию' or event.text == '2.3':
-#delete_category(event.user_id)
+def get_all_keywords(user_id):
+    pass
 
+def add_keywords(user_id):
+    pass
+
+def delete_keywords(user_id):
+    pass
+
+def keywords(user_id):
+    while True:
+        result_choice = vk_menu(user_id,
+                                'Ключевые слова:',(
+                                    'Посмотреть',
+                                    'Добавить',
+                                    'Удалить',
+                                    'Выход'
+                                 ))
+        if result_choice in ('2', 'Добавить'):
+            pass
+
+def get_news(user_id):
+    response = requests.get('http://localhost:8080/news/',
+                            params={'vk_id': user_id})
+    print(response.text)
+    todos = json.loads(response.text)
+    print (todos)
+    print('News')
+    vk_print(user_id, 'Новости', todos)
+    return todos
+    pass
 
 def main_menu(user_id):
     while True:
@@ -191,6 +228,14 @@ def main_menu(user_id):
             category_of_news(user_id)
             return 2
 
+        elif result_choice in ('3', 'Ключевые слова'):
+            keywords(user_id)
+            return 3
+
+        elif result_choice in ('4', 'Новости'):
+            print('News')
+            get_news(user_id)
+            return 4
 
 for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
@@ -219,23 +264,11 @@ for event in longpoll.listen():
                 elif event.text == 'Список команд' or event.text == '0':
                     main_menu(event.user_id)
 
-
-                elif event.text == 'Проверка':
-                    write_msg(user_id=event.user_id,
-                              message=get_user(event.user_id))
-
-#                    msg_text = "Все доступные категории новостей: \n"
-#                    for news_number in range(0, len(selections)):
-#                        msg_text = msg_text+(str(news_number + 1) + '. ' + selections[news_number]+'\n')
-#                    msg_text = msg_text + ('0. Все' )
-#                    write_msg(user_id=event.user_id,
-#                              message=msg_text
-#                              )
                 elif event.text == 'Посмотреть ключевые слова' or event.text == '3.1':
                     get_all_keywords(event.user_id)
                 elif event.text == 'Добавить ключевые слова' or event.text == '3.2':
                     add_keywords(event.user_id)
                 elif event.text == 'Удалить ключевые слова' or event.text == '3.3':
                     delete_keywords(event.user_id)
-                elif event.text == 'Получить новости' or event.text == '4':
-                    get_news(event.user_id)
+                else:
+                    main_menu(event.user_id)
