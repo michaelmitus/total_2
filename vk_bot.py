@@ -184,33 +184,67 @@ def category_of_news(user_id):
             return 0
 
 def get_all_keywords(user_id):
+    response = requests.get('http://localhost:8080/subscriptions/keywords/',
+                             params = {'vk_id': user_id})
+    todos = json.loads(response.text)
+    select = list()
+    for items in range(len(todos)):
+        select_item = (todos[items])
+        select.append(select_item)
+    return select
     pass
 
-def add_keywords(user_id):
-    pass
+def add_keywords(user_id, keyword):
+    response = requests.post('http://localhost:8080/subscriptions/keywords/',
+                             params = {'vk_id': user_id, 'keyword': keyword})
+    return response.text
+
+def enter_keyword(user_id):
+    for event in longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW and event.to_me and event.text:
+            if event.from_user or event.from_chat:
+                if event.text == 'Выйти' or event.text == '0':
+                    return None
+                else:
+                    print(event.text)
+                    return add_keywords(user_id, event.text)
 
 def delete_keywords(user_id):
-    pass
+    selection = get_all_keywords(user_id)
+    result = vk_menu(user_id, 'Какое ключевое слово будем удалять?', selection)
+    if int(result) in range(len(selection)+1):
+        keyword = selection[int(result)-1]
+        response = requests.delete('http://localhost:8080/subscriptions/keywords/',
+                             params = {'vk_id': user_id, 'keyword': keyword})
+        return response.text
+    else:
+        return 'Неверный выбор'
 
 def keywords(user_id):
     while True:
         result_choice = vk_menu(user_id,
-                                'Ключевые слова:',(
+                                'Что делать с ключевывыми словами?',(
                                     'Посмотреть',
                                     'Добавить',
                                     'Удалить',
                                     'Выход'
                                  ))
         if result_choice in ('2', 'Добавить'):
-            pass
+            write_msg(user_id=user_id,
+                      message='Какое слово Вы хотите добавить? (0 - Выйти)',
+                      )
+            write_msg(user_id,enter_keyword(user_id))
+        elif result_choice in ('3', 'Удалить'):
+            write_msg(user_id,delete_keywords(user_id))
+        elif result_choice in ('1', 'Посмотреть'):
+            vk_print(user_id,'Ключевые слова: ',get_all_keywords(user_id))
+        elif result_choice in ('0', '4', 'Выход'):
+            return 0
 
 def get_news(user_id):
     response = requests.get('http://localhost:8080/news/',
-                            params={'vk_id': user_id})
-    print(response.text)
+                            params={'vk_id': user_id, 'keywords': 'USA', 'category': 'sports'})
     todos = json.loads(response.text)
-    print (todos)
-    print('News')
     vk_print(user_id, 'Новости', todos)
     return todos
     pass
@@ -264,11 +298,5 @@ for event in longpoll.listen():
                 elif event.text == 'Список команд' or event.text == '0':
                     main_menu(event.user_id)
 
-                elif event.text == 'Посмотреть ключевые слова' or event.text == '3.1':
-                    get_all_keywords(event.user_id)
-                elif event.text == 'Добавить ключевые слова' or event.text == '3.2':
-                    add_keywords(event.user_id)
-                elif event.text == 'Удалить ключевые слова' or event.text == '3.3':
-                    delete_keywords(event.user_id)
                 else:
                     main_menu(event.user_id)

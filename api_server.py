@@ -143,19 +143,16 @@ def delete_category(vk_id, category_id):
     con.close()
     return 'ok'
 
-
 def all_news(**kwargs):
-
     api_key = 'c6b4dff59361415dada7968f05685325'
     newsapi = NewsApiClient(api_key)
     news_on_page = 10
     all_sources = newsapi.get_top_headlines(
         category = kwargs['category'],
-        language = kwargs['language'],
-        q = 'USA'
+        language = 'en',
+        q = kwargs['keywords'],
         )
     sources = all_sources['articles']
-
     news_list = list()
     if all_sources['articles']:
         print('News list:')
@@ -170,7 +167,51 @@ def all_news(**kwargs):
 @app.route('/news/', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 def get_news():
     vk_id = request.args.get('vk_id')
-    return jsonify(all_news(language='en', category='general', keywords='NBA'))
+    keywords = request.args.get('keywords')
+    category = request.args.get('category')
+    return jsonify(all_news(category=category, keywords=keywords))
+
+def delete_keyword(vk_id, keyword):
+    sql_request = 'DELETE FROM Keywords WHERE (Keywords.Text="' + str(keyword) + '") AND (Keywords.UserID=' + str(vk_id)+')'
+    con = lite.connect('news_api.sqlite')
+    curID = con.cursor()
+    curID.executescript(sql_request)
+    resp = curID.fetchall()
+    con.close()
+    return 'Ключевое слово: "'+keyword+'" ,было удалено из списка'
+
+def get_keywords_clear(vk_id):
+    sql_request = "SELECT Text FROM Keywords WHERE Keywords.UserID="+str(vk_id)
+    con = lite.connect('news_api.sqlite')
+    curID = con.cursor()
+    curID.execute(sql_request)
+    resp = curID.fetchall()
+    select = list()
+    for items in range(len(resp)):
+        select_item = (resp[items])
+        select.append(select_item[0])
+    con.close()
+    return select
+
+def add_keyword(vk_id, keyword):
+    sql_request = "INSERT INTO Keywords (Text, UserID) VALUES ('%s','%s')" % (keyword, vk_id)
+    con = lite.connect('news_api.sqlite')
+    curID = con.cursor()
+    curID.executescript(sql_request)
+    print(sql_request)
+    con.close()
+    return 'Ключевое слово: ' + keyword + ' было добавлено'
+
+@app.route('/subscriptions/keywords/', methods=['GET', 'POST', 'PATCH', 'DELETE'])
+def keywords():
+    vk_id = request.args.get('vk_id')
+    keyword = request.args.get('keyword')
+    if request.method == 'GET':
+        return jsonify(get_keywords_clear(vk_id))
+    elif request.method == 'POST':
+        return add_keyword(vk_id, keyword)
+    elif request.method == 'DELETE':
+        return delete_keyword(vk_id, keyword)
 
 @app.route('/subscriptions/categories/', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 def categorys(*args, **kwargs):
