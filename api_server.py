@@ -170,7 +170,7 @@ def all_news(**kwargs):
 @app.route('/news/', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 def get_news():
     vk_id = request.args.get('vk_id')
-    return jsonify(all_news(language='en', category='sports, general', keywords='NBA'))
+    return jsonify(all_news(language='en', category='general', keywords='NBA'))
 
 @app.route('/subscriptions/categories/', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 def categorys(*args, **kwargs):
