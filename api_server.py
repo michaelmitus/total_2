@@ -3,6 +3,7 @@ import sqlite3 as lite
 import json
 from newsapi import NewsApiClient
 from flask import Flask, request, Response, render_template, jsonify
+# from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
@@ -137,9 +138,6 @@ def delete_category(vk_id, category_id):
     curID = con.cursor()
     curID.executescript(sql_request)
     resp = curID.fetchall()
-    print('Cat', category_id, 'User', vk_id)
-    print(sql_request)
-    print(resp)
     con.close()
     return 'ok'
 
@@ -154,8 +152,8 @@ def all_news(**kwargs):
         )
     sources = all_sources['articles']
     news_list = list()
+
     if all_sources['articles']:
-        print('News list:')
         for news_number in range(0, news_on_page):
              if news_number == len(all_sources['articles']) :
                  break

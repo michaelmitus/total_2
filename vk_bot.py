@@ -90,17 +90,6 @@ def registration(user_id):
         elif result_choice in ('0', '4'):
             return 0
 
-def get_all_category():
-#    def list_of_filters(params, **filters):
-    api_key = 'c6b4dff59361415dada7968f05685325'
-    newsapi = NewsApiClient(api_key)
-    all_sources = newsapi.get_sources()
-    sources = all_sources['sources']
-    selections = set()
-    for news_number in range(0, len(all_sources['sources'])):
-        selections.add(sources[news_number]['category'])
-    return list(selections)
-
 def get_all_categorys():
     response = requests.get('http://localhost:8080/subscriptions/categories/',
                              params = {'vk_id': None})
@@ -112,7 +101,6 @@ def get_category(user_id):
                              params = {'vk_id': user_id})
     todos = json.loads(response.text)
     return todos
-    pass
 
 def get_category_clear(user_id):
     response = requests.get('http://localhost:8080/subscriptions/categories/',
@@ -123,19 +111,16 @@ def get_category_clear(user_id):
         select_item = (todos[items])
         select.append(select_item[1])
     return select
-    pass
 
 def add_category(user_id,category_id):
     response = requests.post('http://localhost:8080/subscriptions/categories/',
                              params = {'vk_id': user_id, 'category_id': category_id})
     return response.text
-    pass
 
 def delete_category(user_id,category_id):
     response = requests.delete('http://localhost:8080/subscriptions/categories/',
                              params = {'vk_id': user_id, 'category_id': category_id})
     return response.text
-    pass
 
 def category_of_news(user_id):
     while True:
@@ -192,7 +177,6 @@ def get_all_keywords(user_id):
         select_item = (todos[items])
         select.append(select_item)
     return select
-    pass
 
 def add_keywords(user_id, keyword):
     response = requests.post('http://localhost:8080/subscriptions/keywords/',
@@ -242,9 +226,21 @@ def keywords(user_id):
             return 0
 
 def get_news(user_id):
+
+    category = get_category_clear(user_id)
+    all_keywords = get_all_keywords(user_id)
+    keyword_list = all_keywords[0]
+    if len(all_keywords) > 1:
+        for keyword in all_keywords:
+            keyword_list = keyword_list + ' OR ' + keyword
+    print(category[0], keyword[0])
+    print(keyword_list)
+    print(len(all_keywords))
+
     response = requests.get('http://localhost:8080/news/',
-                            params={'vk_id': user_id, 'keywords': 'USA', 'category': 'sports'})
+                            params={'vk_id': user_id, 'keywords': all_keywords[0], 'category': category[0]})
     todos = json.loads(response.text)
+
     vk_print(user_id, 'Новости', todos)
     return todos
     pass
